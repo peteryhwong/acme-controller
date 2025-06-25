@@ -1,0 +1,115 @@
+name: ankh
+secrets:
+    NEXUS_NPM_REGISTRY_ROOT_TOKEN:
+        environment: NEXUS_NPM_REGISTRY_ROOT_TOKEN
+    NEXUS_NPM_REGISTRY_TOKEN:
+        environment: NEXUS_NPM_REGISTRY_TOKEN
+services:
+    controller-mysql:
+        image: nexus.ankh-local.com:5000/mysql:8.0
+        ports:
+            - '3306:3306'
+        environment:
+            MYSQL_DATABASE: ac_control
+            MYSQL_ROOT_PASSWORD: dummy
+            TZ: Asia/Hong_Kong
+    controller-migration:
+        image: ${DOCKER_IMAGE:-nexus.ankh-local.com:5001/ankh/acme-controller:latest}
+        build:
+            context: ./
+            args:
+                SKIP_RUN_TEST: 'true'
+                NEXUS_NPM_REGISTRY_ROOT_HOST: 'nexus.ankh-local.com/repository/'
+                NEXUS_NPM_REGISTRY_HOST: 'nexus.ankh-local.com/repository/npm-private'
+            secrets:
+                - NEXUS_NPM_REGISTRY_ROOT_TOKEN
+                - NEXUS_NPM_REGISTRY_TOKEN
+        command: ['sh', '-c', 'node dist/migration.js']
+        depends_on:
+            - 'controller-mysql'
+        environment:
+            DB_HOST: 'controller-mysql'
+            INTEGRATION: 'mock'
+            LOGLEVEL: 'DEBUG'
+            NO_POLL: 'true'
+            USER_BASE_URL: 'http://user:8080/user'
+            SLACK_DEVICEERROR_URL: '${SLACK_URL}'
+            SLACK_GENERAL_URL: '${SLACK_URL}'
+    controller-job:
+        image: ${DOCKER_IMAGE:-nexus.ankh-local.com:5001/ankh/acme-controller:latest}
+        build:
+            context: ./
+            args:
+                SKIP_RUN_TEST: 'true'
+                NEXUS_NPM_REGISTRY_ROOT_HOST: 'nexus.ankh-local.com/repository/'
+                NEXUS_NPM_REGISTRY_HOST: 'nexus.ankh-local.com/repository/npm-private'
+            secrets:
+                - NEXUS_NPM_REGISTRY_ROOT_TOKEN
+                - NEXUS_NPM_REGISTRY_TOKEN
+        ports:
+            - '22233:8080'
+        depends_on:
+            - 'controller-mysql'
+            - 'controller-migration'
+        environment:
+            DB_HOST: 'controller-mysql'
+            INTEGRATION: 'mock'
+            LOGLEVEL: 'DEBUG'
+            NO_POLL: 'false'
+            USER_BASE_URL: 'http://user:8080/user'
+            SLACK_DEVICEERROR_URL: '${SLACK_URL}'
+            SLACK_GENERAL_URL: '${SLACK_URL}'
+    controller:
+        image: ${DOCKER_IMAGE:-nexus.ankh-local.com:5001/ankh/acme-controller:latest}
+        build:
+            context: ./
+            args:
+                SKIP_RUN_TEST: 'true'
+                NEXUS_NPM_REGISTRY_ROOT_HOST: 'nexus.ankh-local.com/repository/'
+                NEXUS_NPM_REGISTRY_HOST: 'nexus.ankh-local.com/repository/npm-private'
+            secrets:
+                - NEXUS_NPM_REGISTRY_ROOT_TOKEN
+                - NEXUS_NPM_REGISTRY_TOKEN
+        ports:
+            - '22223:8080'
+        depends_on:
+            - 'controller-mysql'
+            - 'controller-migration'
+        environment:
+            DB_HOST: 'controller-mysql'
+            INTEGRATION: 'mock'
+            LOGLEVEL: 'DEBUG'
+            NO_POLL: 'true'
+            USER_BASE_URL: 'http://user:8080/user'
+            SLACK_DEVICEERROR_URL: '${SLACK_URL}'
+            SLACK_GENERAL_URL: '${SLACK_URL}'
+    user-mysql:
+        image: nexus.ankh-local.com:5000/mysql:8.0
+        ports:
+            - '3305:3306'
+        environment:
+            MYSQL_DATABASE: ac_user
+            MYSQL_ROOT_PASSWORD: dummy
+            TZ: Asia/Hong_Kong
+    user-migration:
+        image: ${DOCKER_IMAGE:-nexus.ankh-local.com:5001/ankh/ankh-user:latest}
+        command: ['sh', '-c', 'node dist/migration.js']
+        depends_on:
+            - 'user-mysql'
+        environment:
+            DB_HOST: 'user-mysql'
+            LOGLEVEL: 'DEBUG'
+            INTEGRATION: 'mock'
+            USER_BASE_URL: 'http://service:8080/user'
+    user:
+        image: ${DOCKER_IMAGE:-nexus.ankh-local.com:5001/ankh/ankh-user:latest}
+        ports:
+            - '22232:8080'
+        depends_on:
+            - 'user-mysql'
+            - 'user-migration'
+        environment:
+            DB_HOST: 'user-mysql'
+            LOGLEVEL: 'DEBUG'
+            INTEGRATION: 'mock'
+            USER_BASE_URL: 'http://user:8080/user'

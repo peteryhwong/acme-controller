@@ -1,0 +1,32 @@
+{
+  "name": "acme-controller-component-test",
+  "version": "1.0.0",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "generate-client": "npx @hey-api/openapi-ts -i http://localhost:22223/controller/openapi.json -o test/functions/client -c @hey-api/client-axios",
+    "run-test": "jest",
+    "wait": "code=500; while [[ \"$code\" != \"200\" ]]; do code=$(curl -s -o /dev/null -w '%{http_code}' http://service:8080); sleep 1; echo $code; done",
+    "test": "npm run wait && npm run run-test",
+    "build-test": "docker compose build test",
+    "clean-test": "docker compose down -t0 mysql && sh script/mysql.sh",
+    "migrate": "docker compose up --force-recreate migration",
+    "up-test": "docker-compose up -d && docker-compose run --rm test npm t"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "devDependencies": {
+    "@hey-api/client-axios": "^0.7.0",
+    "@types/jest": "^27.5.2",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/uuid": "^3.4.4",
+    "jest": "^29.3.1",
+    "jsonwebtoken": "^9.0.2",
+    "mockserver-client": "^5.15.0",
+    "ts-jest": "^29.3.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
+    "uuid": "^11.1.0"
+  }
+}

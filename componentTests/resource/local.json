@@ -1,0 +1,6 @@
+{
+    "controller": {
+        "baseUrl": "http://service:8080/controller",
+        "webSocketBaseUrl": "ws://service:8080/controller"
+    }
+}

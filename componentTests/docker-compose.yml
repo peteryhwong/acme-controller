@@ -1,0 +1,103 @@
+name: acme-controller-test
+services:
+    mysql:
+        image: nexus.ankh-local.com:5000/mysql:8.0
+        ports:
+            - '3307:3306'
+        environment:
+            MYSQL_DATABASE: ac_control
+            MYSQL_ROOT_PASSWORD: dummy
+            TZ: Asia/Hong_Kong
+    mock:
+        image: nexus.ankh-local.com:5000/mockserver/mockserver:5.15.0
+    wait-for-mock:
+        image: nexus.ankh-local.com:5000/curlimages/curl:8.13.0
+        command: >
+            sh -c "sleep 5; until curl -s -o /dev/null -w '%{http_code}' -X 'PUT' http://mock:1080/mockserver/status | grep -q '200'; do
+                curl -vv -X 'PUT' http://mock:1080/mockserver/status || true
+                echo 'Still waiting...';
+                sleep 5;
+            done; echo 'Wait another 2 seconds'; sleep 2; echo 'Service is up!'"
+        depends_on:
+            - mock
+    migration:
+        image: ${DOCKER_IMAGE:-nexus.ankh-local.com:5001/ankh/acme-controller:latest}
+        build:
+            context: ../
+            args:
+                SKIP_RUN_TEST: 'true'
+                NEXUS_NPM_REGISTRY_ROOT_HOST: 'nexus.ankh-local.com/repository/'
+                NEXUS_NPM_REGISTRY_HOST: 'nexus.ankh-local.com/repository/npm-private'
+            secrets:
+                - NEXUS_NPM_REGISTRY_ROOT_TOKEN
+                - NEXUS_NPM_REGISTRY_TOKEN
+        command: ['sh', '-c', 'node dist/migration.js']
+        depends_on:
+            - 'mysql'
+        environment:
+            DB_HOST: 'mysql'
+            INTEGRATION: 'mock'
+            LOGLEVEL: 'DEBUG'
+            NO_POLL: 'true'
+            USER_BASE_URL: 'http://mock:1080/user'
+            SLACK_DEVICEERROR_URL: 'http://mock:1080/webhook'
+            SLACK_GENERAL_URL: 'http://mock:1080/webhook'
+    job:
+        image: ${DOCKER_IMAGE:-nexus.ankh-local.com:5001/ankh/acme-controller:latest}
+        build:
+            context: ../
+            args:
+                SKIP_RUN_TEST: 'true'
+                NEXUS_NPM_REGISTRY_ROOT_HOST: 'nexus.ankh-local.com/repository/'
+                NEXUS_NPM_REGISTRY_HOST: 'nexus.ankh-local.com/repository/npm-private'
+            secrets:
+                - NEXUS_NPM_REGISTRY_ROOT_TOKEN
+                - NEXUS_NPM_REGISTRY_TOKEN
+        depends_on:
+            - 'migration'
+        environment:
+            DB_HOST: 'mysql'
+            INTEGRATION: 'mock'
+            LOGLEVEL: 'DEBUG'
+            NO_POLL: 'false'
+            QUEUE_POLLING_INTERVAL_MS: '2000'
+            USER_BASE_URL: 'http://mock:1080/user'
+            SLACK_DEVICEERROR_URL: 'http://mock:1080/webhook'
+            SLACK_GENERAL_URL: 'http://mock:1080/webhook'
+            APPROVAL_TENS_INTENSITY_LIMIT_DISABLED: 'false'
+            APPROVAL_TENS_PARTS_LIMIT_DISABLED: 'false'
+            ANORMALY_ULTRASOUND_ZERO_TEMPERATURE_DURATION_SECONDS_DISABLED: 'false'
+            ANORMALY_ULTRASOUND_OVERTHEAT_DURATION_SECONDS_DISABLED: 'false'
+    service:
+        image: ${DOCKER_IMAGE:-nexus.ankh-local.com:5001/ankh/acme-controller:latest}
+        build:
+            context: ../
+            args:
+                SKIP_RUN_TEST: 'true'
+                NEXUS_NPM_REGISTRY_ROOT_HOST: 'nexus.ankh-local.com/repository/'
+                NEXUS_NPM_REGISTRY_HOST: 'nexus.ankh-local.com/repository/npm-private'
+            secrets:
+                - NEXUS_NPM_REGISTRY_ROOT_TOKEN
+                - NEXUS_NPM_REGISTRY_TOKEN
+        depends_on:
+            - 'migration'
+        environment:
+            DB_HOST: 'mysql'
+            INTEGRATION: 'mock'
+            LOGLEVEL: 'DEBUG'
+            NO_POLL: 'true'
+            USER_BASE_URL: 'http://mock:1080/user'
+            SLACK_DEVICEERROR_URL: 'http://mock:1080/webhook'
+            SLACK_GENERAL_URL: 'http://mock:1080/webhook'
+            APPROVAL_TENS_INTENSITY_LIMIT_DISABLED: 'false'
+            APPROVAL_TENS_PARTS_LIMIT_DISABLED: 'false'
+            ANORMALY_ULTRASOUND_ZERO_TEMPERATURE_DURATION_SECONDS_DISABLED: 'false'
+            ANORMALY_ULTRASOUND_OVERTHEAT_DURATION_SECONDS_DISABLED: 'false'
+    test:
+        build:
+            context: .
+secrets:
+    NEXUS_NPM_REGISTRY_ROOT_TOKEN:
+        environment: NEXUS_NPM_REGISTRY_ROOT_TOKEN
+    NEXUS_NPM_REGISTRY_TOKEN:
+        environment: NEXUS_NPM_REGISTRY_TOKEN

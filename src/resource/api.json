@@ -1,0 +1,83 @@
+{
+    "db": {
+        "host": "localhost",
+        "port": "3306",
+        "username": "root",
+        "password": "dummy",
+        "dbname": "ac_control"
+    },
+    "robot": {
+        "username": "controllerrobot",
+        "password": "controllerrobot"
+    },
+    "notifications": {
+        "slack": {
+            "deviceerror": "https://slack",
+            "general": "https://slack"
+        }
+    },
+    "oss": {
+        "timeout": "3600",
+        "bucket": {
+            "acme-repository": {
+                "region": "oss-cn-hongkong",
+                "accessKeyId": "dummy",
+                "accessKeySecret": "dummy",
+                "bucket": "acme-repository",
+                "domain": "repository.acme-local.online"
+            }
+        }
+    },
+    "poll": {
+        "heartbeat": {
+            "interval_mins": "15"
+        },
+        "healthcheck": {
+            "includes": "",
+            "excludes": "",
+            "upgrade_allowed_delay_mins": "180",
+            "start_time": "09:00:00",
+            "end_time": "17:00:00",
+            "interval_mins": "5"
+        },
+        "ping": {
+            "includes": "",
+            "excludes": "",
+            "start_time": "09:00:00",
+            "end_time": "17:00:00",
+            "interval_mins": "1"
+        },
+        "queue": {
+            "interval_ms": "10000"
+        }
+    },
+    "treatment": {
+        "anomalies": {
+            "ultrasound": {
+                "overheat_duration_seconds": {
+                    "disabled": "true",
+                    "value": "300"
+                },
+                "zero_temperature_duration_seconds": {
+                    "disabled": "true",
+                    "value": "300"
+                }
+            }
+        },
+        "approval": {
+            "tens": {
+                "intensity_limit": {
+                    "disabled": "true",
+                    "value": "30"
+                },
+                "daily_parts_limit": {
+                    "disabled": "true",
+                    "value": "3"
+                }
+            }
+        }
+    },
+    "user": {
+        "baseUrl": "http://localhost:22222/user"
+    }
+}

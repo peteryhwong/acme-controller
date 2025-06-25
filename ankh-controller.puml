@@ -1,0 +1,176 @@
+@startuml
+
+!define table(ename, dbname) entity "<b>ename</b>"
+
+!define pkey(x) {field} <b><color:DarkGoldenRod><&key></color> x</b>
+!define fkey(x) {field} <color:#AAAAAA><&key></color> x
+!define column(x) {field} <color:#EFEFEF><&media-record></color> x
+
+hide stereotypes
+hide methods
+hide circle
+
+top to bottom direction
+
+skinparam roundcorner 5
+skinparam linetype ortho
+skinparam shadowing false
+skinparam handwritten false
+
+skinparam class {
+    BackgroundColor white
+    ArrowColor seagreen
+    BorderColor seagreen
+}
+
+
+table( DeviceHistory, devicehistory ) as devicehistory {
+  pkey( devicehistoryid ): VARCHAR(255) 
+  column( version ): INT(11) 
+  column( datetime ): DATETIME(6) 
+  column( detail ): JSON 
+  fkey( deviceDeviceId ): VARCHAR(36) <<FK>>
+}
+
+table( Event, event ) as event {
+  pkey( eventid ): VARCHAR(255) 
+  column( version ): INT(11) 
+  column( datetime ): DATETIME(6) 
+  column( type ): TEXT 
+  column( detail ): JSON 
+  column( status ): VARCHAR(255) 
+  column( runnerid ): TEXT 
+  column( schedule ): DATETIME 
+  column( starttime ): BIGINT(20) 
+  column( endtime ): BIGINT(20) 
+  column( duration ): BIGINT(20) 
+  column( priority ): INT(11) 
+  fkey( deviceDeviceId ): VARCHAR(36) <<FK>>
+}
+
+table( JobHistory, jobhistory ) as jobhistory {
+  pkey( jobhistoryid ): VARCHAR(255) 
+  column( version ): INT(11) 
+  column( datetime ): DATETIME(6) 
+  column( author ): VARCHAR(255) 
+  column( type ): VARCHAR(255) 
+  column( detail ): JSON 
+  column( status ): VARCHAR(255) 
+  fkey( userUserId ): VARCHAR(36) <<FK>>
+  fkey( assigneeAssigneeId ): VARCHAR(36) <<FK>>
+  fkey( deviceDeviceId ): VARCHAR(36) <<FK>>
+}
+
+table( Device, device ) as device {
+  pkey( deviceid ): VARCHAR(255) 
+  column( version ): INT(11) 
+  column( datetime ): DATETIME(6) 
+  column( code ): VARCHAR(255) 
+  column( type ): VARCHAR(255) 
+  column( hash ): TEXT 
+  column( status ): VARCHAR(255) 
+  column( masterprogramversion ): VARCHAR(255) 
+  column( deletedat ): DATETIME 
+  fkey( locationLocationId ): VARCHAR(36) <<FK>>
+}
+
+table( Command, command ) as command {
+  pkey( commandid ): VARCHAR(255) 
+  column( version ): INT(11) 
+  column( datetime ): DATETIME(6) 
+  column( detail ): JSON 
+  column( status ): VARCHAR(255) 
+  fkey( deviceDeviceId ): VARCHAR(36) <<FK>>
+  fkey( jobJobId ): VARCHAR(36) <<FK>>
+}
+
+table( Job, job ) as job {
+  pkey( jobid ): VARCHAR(255) 
+  column( version ): INT(11) 
+  column( datetime ): DATETIME(6) 
+  column( number ): INT(11) 
+  column( offlinejobid ): VARCHAR(255) 
+  column( type ): VARCHAR(255) 
+  column( detail ): JSON 
+  column( status ): VARCHAR(255) 
+  fkey( assigneeAssigneeId ): VARCHAR(36) <<FK>>
+  fkey( deviceDeviceId ): VARCHAR(36) <<FK>>
+  fkey( userUserId ): VARCHAR(36) <<FK>>
+}
+
+table( Assignee, assignee ) as assignee {
+  pkey( assigneeid ): VARCHAR(255) 
+  column( datetime ): DATETIME(6) 
+  column( version ): INT(11) 
+  column( number ): INT(11) 
+  column( username ): VARCHAR(255) 
+  column( type ): VARCHAR(255) 
+  column( hash ): VARCHAR(255) 
+  column( role ): VARCHAR(255) 
+  column( deletedat ): DATETIME 
+  fkey( locationLocationId ): VARCHAR(36) <<FK>>
+}
+
+table( Location, location ) as location {
+  pkey( locationid ): VARCHAR(255) 
+  column( datetime ): DATETIME(6) 
+  column( version ): INT(11) 
+  column( name ): VARCHAR(255) 
+  column( group ): VARCHAR(255) 
+  column( deletedat ): DATETIME 
+}
+
+table( User, user ) as user {
+  pkey( userid ): VARCHAR(255) 
+  column( datetime ): DATETIME(6) 
+  column( version ): INT(11) 
+  column( usernumber ): VARCHAR(255) 
+  column( name ): VARCHAR(255) 
+  column( type ): VARCHAR(255) 
+  column( deletedat ): DATETIME 
+  fkey( locationLocationId ): VARCHAR(36) <<FK>>
+}
+
+table( TreatmentPlan, treatmentplan ) as treatmentplan {
+  pkey( treatmentplanid ): VARCHAR(255) 
+  column( datetime ): DATETIME(6) 
+  column( version ): INT(11) 
+  column( name ): VARCHAR(255) 
+  column( type ): VARCHAR(255) 
+  column( ultrasound ): INT(11) 
+  column( tens ): INT(11) 
+  column( group ): VARCHAR(255) 
+}
+
+table( TreatmentPlanHistory, treatmentplanhistory ) as treatmentplanhistory {
+  pkey( treatmentplanhistoryid ): VARCHAR(255) 
+  column( version ): INT(11) 
+  column( datetime ): DATETIME(6) 
+  column( detail ): JSON 
+  column( author ): VARCHAR(255) 
+  fkey( treatmentPlanTreatmentPlanId ): VARCHAR(36) <<FK>>
+}
+
+table( job_jobhistory_jobhistory, job_jobhistory_jobhistory ) as job_jobhistory_jobhistory {
+  pkey( jobJobid ): VARCHAR(36) 
+  pkey( jobhistoryJobhistoryid ): VARCHAR(36) 
+}
+
+"device" ||--o{ "devicehistory"
+"device" ||--o{ "event"
+"user" ||--o{ "jobhistory"
+"assignee" ||--o{ "jobhistory"
+"device" ||--o{ "jobhistory"
+"location" ||--o{ "device"
+"device" ||--o{ "command"
+"job" ||--o{ "command"
+"assignee" ||--o{ "job"
+"device" ||--o{ "job"
+"user" ||--o{ "job"
+"location" ||--o{ "assignee"
+"location" ||--o{ "user"
+"treatmentplan" ||--o{ "treatmentplanhistory"
+"job" ||--|{ "job_jobhistory_jobhistory"
+"jobhistory" ||--|{ "job_jobhistory_jobhistory"
+
+@enduml
